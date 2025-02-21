@@ -1,35 +1,89 @@
-group 'xyz.justsoft.video_thumbnail'
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+group 'com.fluttercandies.photo_manager'
 version '1.0-SNAPSHOT'
 
 buildscript {
+    ext.kotlin_version = '1.9.23'
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 rootProject.allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+void log(Object msg) {
+    logger.log(LogLevel.INFO, "[PhotoManager] $msg")
+}
+
+/**
+ * Get java version from JAVA_HOME
+ * @param path JAVA_HOME path
+ * @return java version
+ */
+JavaVersion getJavaFromHome(String path) {
+    def releaseFile = new File(path, "release")
+
+    if (releaseFile.exists()) {
+        def pattern = Pattern.compile("JAVA_VERSION=\"(\\d+)\"")
+        def matcher = pattern.matcher(releaseFile.text)
+        if (matcher.find()) {
+            def version = matcher.group(1)
+            log("Get java version from release file: $version")
+            return JavaVersion.toVersion(version)
+        }
+    } else {
+        def javaBin = new File("${path}/bin/java")
+        if (javaBin.exists()) {
+            return JavaVersion.VERSION_1_8
+        } else if (new File("${path}/bin/java.exe").exists()) {
+            return JavaVersion.VERSION_1_8
+        }
+
+        return null
+    }
+}
+
+
 
 android {
-    namespace "xyz.justsoft.video_thumbnail"
-    compileSdkVersion 33
+    if (project.android.hasProperty('namespace') ||
+            getGradle().getGradleVersion().substring(0, 1).toInteger() >= 8) {
+        namespace 'com.flutterandies.photo_manager'
+    }
+
+    compileSdkVersion 34
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     defaultConfig {
         minSdkVersion 16
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    lintOptions {
-        disable 'InvalidPackage'
-    }
+}
+
+dependencies {
+    implementation 'com.github.bumptech.glide:glide:4.15.1'
+    implementation 'androidx.exifinterface:exifinterface:1.3.7'
 }
